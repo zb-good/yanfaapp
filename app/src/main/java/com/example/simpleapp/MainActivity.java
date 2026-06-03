@@ -1,8 +1,13 @@
 package com.example.simpleapp;
 
 import android.app.Activity;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -12,263 +17,230 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final int COLOR_PRIMARY = Color.rgb(24, 77, 125);
-    private static final int COLOR_ACCENT = Color.rgb(11, 128, 115);
-    private static final int COLOR_WARNING = Color.rgb(219, 112, 25);
-    private static final int COLOR_DANGER = Color.rgb(201, 54, 66);
-    private static final int COLOR_TEXT = Color.rgb(28, 38, 54);
-    private static final int COLOR_MUTED = Color.rgb(91, 103, 123);
-    private static final int COLOR_CARD = Color.WHITE;
+    private static final int BG = Color.rgb(239, 244, 248);
+    private static final int CARD = Color.WHITE;
+    private static final int INK = Color.rgb(24, 32, 46);
+    private static final int MUTED = Color.rgb(91, 104, 126);
+    private static final int BLUE = Color.rgb(30, 95, 168);
+    private static final int TEAL = Color.rgb(0, 137, 123);
+    private static final int AMBER = Color.rgb(224, 139, 32);
+    private static final int RED = Color.rgb(204, 55, 66);
+    private static final int PURPLE = Color.rgb(106, 82, 176);
 
-    private static final Module[] MODULES = new Module[] {
-            new Module(
-                    "S1",
-                    "标准化建筑防渗漏数据采集",
-                    "移动端标准化录入、设备对接与预处理，确保数据格式统一并可直接输入后端算法模型。",
-                    new String[] {"离线档案 128 栋", "设备接入 6 类", "预处理完成率 96%"},
-                    new Feature[] {
-                            new Feature("建筑基础档案管理",
-                                    "新建、编辑、查询建筑档案；录入建造年限、结构形式、围护结构材质、防水构造层级、服役老化程度；支持 GPS、全景照片/视频、平面图标注与 Excel 批量导入。",
-                                    "字段与专利实施例二保持一致；支持离线新建档案，网络恢复后自动同步。"),
-                            new Feature("多源数据手动录入",
-                                    "分模块录入场地环境、建筑使用、渗漏维护历史、居住人员反馈等数据。",
-                                    "提供下拉选择、数值输入、日期选择等标准化控件；必填校验与异常值提示。"),
-                            new Feature("物联网设备数据对接",
-                                    "通过蓝牙/NFC 连接温湿度传感器、裂缝测宽仪、渗水压力计，形成墙体温湿度、裂缝宽度、防水层形变、结构渗水压力等时序数据。",
-                                    "支持 Modbus、BLE；采集频率可配置，默认 1 次/分钟。"),
-                            new Feature("无损检测数据上传",
-                                    "导入红外热像仪、超声波检测仪结构化数据，标注空鼓区域、表层损伤、裂缝位置与长度。",
-                                    "支持 JPG、PDF 报告上传与 OCR 识别；裂缝长度/面积自动计算与标注。"),
-                            new Feature("数据预处理与同步",
-                                    "执行缺失值填补、异常值剔除、Z-Score 标准化；本地缓存并断点续传；加密传输与本地加密存储。",
-                                    "预处理逻辑与专利保持一致；离线可存储不少于 100 栋建筑完整数据。")
-                    }),
-            new Module(
-                    "S2",
-                    "建筑渗漏风险聚类评估",
-                    "调用后端改进密度峰值聚类算法，完成渗漏风险自动分级与可视化展示。",
-                    new String[] {"高风险 12 栋", "平均耗时 2.4 秒", "聚类置信度 0.91"},
-                    new Feature[] {
-                            new Feature("批量风险评估",
-                                    "选择单栋或多栋建筑发起评估；返回低/中/较高/高风险等级，并展示耗时、特征维度和聚类置信度。",
-                                    "单栋响应不超过 3 秒；100 栋批量响应不超过 30 秒。"),
-                            new Feature("风险等级可视化",
-                                    "地图按绿、黄、橙、红标注风险；列表按风险排序；统计看板展示等级占比和区域热力。",
-                                    "地图支持缩放、平移与筛选；统计数据实时更新。"),
-                            new Feature("单建筑风险详情",
-                                    "展示核心风险特征、簇标签、同簇参考建筑历史，并生成 PDF 风险评估报告。",
-                                    "特征提取与聚类逻辑一致；报告包含评估结论和初步处置建议。"),
-                            new Feature("风险预警",
-                                    "对高/较高风险建筑自动推送预警，可设置阈值并查询导出预警记录。",
-                                    "预警延迟不超过 1 分钟；支持短信与应用内通知。")
-                    }),
-            new Module(
-                    "S3",
-                    "建筑渗漏全工况演化预测",
-                    "基于 LSTM 模型预测无维修干预下的 5-20 年渗漏趋势，识别主导渗漏类型。",
-                    new String[] {"默认周期 10 年", "阈值线 50", "预测成功率 98%"},
-                    new Feature[] {
-                            new Feature("演化预测发起",
-                                    "自动对中、较高、高风险建筑发起预测；支持手动调整周期并展示进度和剩余时间。",
-                                    "单栋响应不超过 5 秒；失败自动重试并提示原因。"),
-                            new Feature("演化结果可视化",
-                                    "生成渗漏程度变化曲线，标注阈值线并高亮首次超阈年份与渗漏类型。",
-                                    "曲线支持缩放和点击查看数值；渗漏类型与策略库分类一致。"),
-                            new Feature("分流决策展示",
-                                    "低风险进入常态化监测；中/较高/高风险跳转到维修策略生成，并输出预测报告。",
-                                    "分流逻辑与专利步骤 S32 一致；报告可导出与分享。")
-                    }),
-            new Module(
-                    "S4",
-                    "匹配式初始防渗漏维修策略生成",
-                    "基于主导渗漏类型匹配标准化策略库，生成带量化参数的初始维修基准策略。",
-                    new String[] {"策略类型 12 种", "匹配准确率 95%", "方案对比 3 组"},
-                    new Feature[] {
-                            new Feature("标准化策略库管理",
-                                    "内置屋面、外墙、地下室、厨卫等防渗漏策略；管理员可维护干预强度、设防等级、覆盖范围、构造层数和版本。",
-                                    "策略库包含不少于 10 种主流渗漏类型；参数范围与专利一致。"),
-                            new Feature("初始策略自动匹配",
-                                    "根据主导渗漏类型匹配基准策略，展示工艺、材料、参数、预估成本与防渗年限。",
-                                    "与专家匹配结果对比准确率不低于 95%；参数调整后实时更新估算。"),
-                            new Feature("策略对比",
-                                    "同时展示 2-3 种备选策略，对比参数、成本、防渗年限和施工难度，并支持导出。",
-                                    "对比维度覆盖专利核心参数；支持一键选择最优策略。")
-                    }),
-            new Module(
-                    "S5",
-                    "建筑防渗漏维修策略智能优化",
-                    "调用改进粒子群优化算法，对初始策略参数迭代优化，生成最优维修参数组合。",
-                    new String[] {"粒子数 40", "迭代 120 次", "耐久提升 18%"},
-                    new Feature[] {
-                            new Feature("优化参数配置",
-                                    "展示 4 个核心参数及可行区间；支持最大化耐久年限、成本优先、工期优先；配置粒子数量、迭代次数和适应度阈值。",
-                                    "参数区间与专利实施例六一致；支持保存常用模板。"),
-                            new Feature("智能优化执行",
-                                    "一键发起优化，实时显示进度、迭代次数和当前最优适应度值，完成后生成参数组合。",
-                                    "单策略优化不超过 10 秒；优化结果收敛率不低于 99%。"),
-                            new Feature("优化结果展示",
-                                    "对比初始与优化后策略参数、年限和成本，展示适应度变化曲线并生成策略书。",
-                                    "防渗年限提升不低于 15%；策略书可直接用于施工指导。"),
-                            new Feature("策略确认与下发",
-                                    "管理人员审核、批注、修改后下发至施工终端，并记录时间、接收人与执行状态。",
-                                    "下发后实时通知；支持撤回与重新下发。")
-                    })
+    private LinearLayout contentRoot;
+    private LinearLayout bottomNav;
+    private int selectedIndex = 0;
+
+    private static final Module[] MODULES = {
+            new Module("S1", "数据采集", "标准化建筑防渗漏数据采集",
+                    "移动端完成建筑档案、现场环境、传感器、无损检测与预处理数据的统一采集。",
+                    "离线档案 128 栋", "同步队列 23 条", "预处理完成率 96%",
+                    new String[] {"建筑基础档案管理", "多源数据手动录入", "物联网设备数据对接", "无损检测数据上传", "数据预处理与同步"},
+                    new String[] {"字段完整率 100%", "异常值自动提示", "默认 1 次/分钟采集", "支持 JPG/PDF/OCR", "离线存储 ≥100 栋"}),
+            new Module("S2", "风险评估", "建筑渗漏风险聚类评估",
+                    "调用改进密度峰值聚类算法，输出低、中、较高、高四级风险并可视化。",
+                    "高风险 12 栋", "平均耗时 2.4 秒", "置信度 0.91",
+                    new String[] {"批量风险评估", "风险等级可视化", "单建筑风险详情", "风险预警"},
+                    new String[] {"单栋 ≤3 秒", "地图支持筛选缩放", "报告可导出 PDF", "推送延迟 ≤1 分钟"}),
+            new Module("S3", "演化预测", "建筑渗漏全工况演化预测",
+                    "基于 LSTM 静态示例结果展示 5-20 年无维修干预下的渗漏发展趋势。",
+                    "默认周期 10 年", "阈值线 50", "首次超阈 第 3 年",
+                    new String[] {"演化预测发起", "演化结果可视化", "分流决策展示"},
+                    new String[] {"单栋 ≤5 秒", "曲线可查看年度值", "S32 分流逻辑"}),
+            new Module("S4", "策略生成", "匹配式初始防渗漏维修策略生成",
+                    "根据主导渗漏类型匹配标准策略库，生成材料、工艺、成本和年限参数。",
+                    "策略库 12 类", "匹配准确率 95%", "备选策略 3 组",
+                    new String[] {"标准化策略库管理", "初始策略自动匹配", "策略对比"},
+                    new String[] {"≥10 种主流类型", "参数调整实时估算", "一键选择最优策略"}),
+            new Module("S5", "智能优化", "建筑防渗漏维修策略智能优化",
+                    "调用改进粒子群优化算法示例结果，对维修参数组合进行迭代优化。",
+                    "粒子数 40", "迭代 120 次", "耐久提升 18%",
+                    new String[] {"优化参数配置", "智能优化执行", "优化结果展示", "策略确认与下发"},
+                    new String[] {"保存配置模板", "收敛率 ≥99%", "年限提升 ≥15%", "支持撤回重发"})
     };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        LinearLayout root = findViewById(R.id.contentRoot);
-        buildHeader(root);
-        buildSummary(root);
-        for (Module module : MODULES) {
-            root.addView(createModuleCard(module));
-        }
+        contentRoot = findViewById(R.id.contentRoot);
+        bottomNav = findViewById(R.id.bottomNav);
+        buildBottomNav();
+        renderPage(0);
     }
 
-    private void buildHeader(LinearLayout root) {
-        TextView label = text("建筑防渗漏智能评估与维修系统", 13, COLOR_ACCENT, Typeface.BOLD);
-        root.addView(label);
-
-        TextView title = text("专利流程移动端静态展示版", 27, COLOR_TEXT, Typeface.BOLD);
-        title.setPadding(0, dp(6), 0, dp(4));
-        root.addView(title);
-
-        TextView desc = text("覆盖 S1 数据采集、S2 聚类评估、S3 演化预测、S4 策略匹配、S5 智能优化。当前版本使用静态示例数据，适合演示业务流程和界面结构。", 15, COLOR_MUTED, Typeface.NORMAL);
-        desc.setLineSpacing(dp(2), 1.0f);
-        root.addView(desc);
-
-        Button action = new Button(this);
-        action.setText("模拟同步 128 栋建筑数据");
-        action.setAllCaps(false);
-        action.setTextColor(Color.WHITE);
-        action.setBackgroundColor(COLOR_PRIMARY);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(0, dp(16), 0, dp(12));
-        action.setLayoutParams(params);
-        action.setOnClickListener(view -> Toast.makeText(this, "静态演示：数据已完成预处理并进入 S2 聚类评估", Toast.LENGTH_LONG).show());
-        root.addView(action);
+    private void renderPage(int index) {
+        selectedIndex = index;
+        contentRoot.removeAllViews();
+        buildHero();
+        buildOverview();
+        buildModulePage(MODULES[index]);
+        refreshTabs();
     }
 
-    private void buildSummary(LinearLayout root) {
-        LinearLayout grid = new LinearLayout(this);
-        grid.setOrientation(LinearLayout.VERTICAL);
-        grid.setPadding(0, dp(4), 0, dp(8));
-        root.addView(grid);
+    private void buildHero() {
+        LinearLayout hero = vertical(18, BLUE);
+        hero.setBackground(rounded(BLUE, 22));
+        hero.addView(label("建筑防渗漏智能评估", 13, Color.rgb(206, 232, 255), Typeface.BOLD));
+        TextView title = label("专利流程移动端驾驶舱", 27, Color.WHITE, Typeface.BOLD);
+        title.setPadding(0, dp(6), 0, dp(6));
+        hero.addView(title);
+        hero.addView(label("静态演示版已按 S1-S5 组织，支持底部切换、图表展示和模块化验收信息查看。", 14, Color.rgb(226, 238, 249), Typeface.NORMAL));
 
-        String[][] stats = {
-                {"建筑档案", "128 栋"},
-                {"高风险预警", "12 条"},
-                {"策略库", "12 类"},
-                {"优化方案", "36 份"}
-        };
-        for (String[] stat : stats) {
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(dp(14), dp(10), dp(14), dp(10));
-            row.setBackgroundColor(Color.rgb(232, 241, 249));
-
-            TextView name = text(stat[0], 14, COLOR_MUTED, Typeface.BOLD);
-            row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-
-            TextView value = text(stat[1], 18, COLOR_PRIMARY, Typeface.BOLD);
-            row.addView(value);
-
-            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            rowParams.setMargins(0, 0, 0, dp(8));
-            grid.addView(row, rowParams);
-        }
+        LinearLayout chips = new LinearLayout(this);
+        chips.setOrientation(LinearLayout.HORIZONTAL);
+        chips.setPadding(0, dp(16), 0, 0);
+        chips.addView(chip("128 栋建筑", Color.rgb(221, 239, 255), BLUE));
+        chips.addView(chip("36 份策略", Color.rgb(220, 247, 241), TEAL));
+        hero.addView(chips);
+        contentRoot.addView(hero, marginParams(0, 0, 0, 14));
     }
 
-    private View createModuleCard(Module module) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(16), dp(16), dp(16), dp(16));
-        card.setBackgroundColor(COLOR_CARD);
+    private void buildOverview() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.addView(statCard("采集完整率", "96%", TEAL), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        row.addView(statCard("高风险", "12", RED), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        contentRoot.addView(row, marginParams(0, 0, 0, 12));
 
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, dp(8), 0, dp(14));
-        card.setLayoutParams(cardParams);
+        LinearLayout chartCard = card(16);
+        chartCard.addView(sectionTitle("风险分布图表"));
+        chartCard.addView(label("低 / 中 / 较高 / 高风险建筑数量", 13, MUTED, Typeface.NORMAL));
+        chartCard.addView(new ChartView(this, ChartView.TYPE_BARS), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(170)));
+        contentRoot.addView(chartCard, marginParams(0, 0, 0, 14));
+    }
 
-        LinearLayout titleRow = new LinearLayout(this);
-        titleRow.setOrientation(LinearLayout.HORIZONTAL);
-        titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        card.addView(titleRow);
+    private void buildModulePage(Module module) {
+        LinearLayout page = card(18);
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setOrientation(LinearLayout.HORIZONTAL);
 
-        TextView step = text(module.step, 14, Color.WHITE, Typeface.BOLD);
+        TextView step = label(module.step, 15, Color.WHITE, Typeface.BOLD);
         step.setGravity(Gravity.CENTER);
-        step.setBackgroundColor(stepColor(module.step));
-        titleRow.addView(step, new LinearLayout.LayoutParams(dp(46), dp(34)));
+        step.setBackground(rounded(stepColor(module.step), 12));
+        top.addView(step, new LinearLayout.LayoutParams(dp(48), dp(38)));
 
-        TextView title = text(module.title, 19, COLOR_TEXT, Typeface.BOLD);
-        title.setPadding(dp(12), 0, 0, 0);
-        titleRow.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        LinearLayout titleBox = new LinearLayout(this);
+        titleBox.setOrientation(LinearLayout.VERTICAL);
+        titleBox.setPadding(dp(12), 0, 0, 0);
+        titleBox.addView(label(module.shortName, 13, stepColor(module.step), Typeface.BOLD));
+        titleBox.addView(label(module.fullName, 19, INK, Typeface.BOLD));
+        top.addView(titleBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        page.addView(top);
 
-        TextView goal = text(module.goal, 14, COLOR_MUTED, Typeface.NORMAL);
-        goal.setPadding(0, dp(12), 0, dp(10));
-        goal.setLineSpacing(dp(2), 1.0f);
-        card.addView(goal);
+        TextView goal = label(module.goal, 14, MUTED, Typeface.NORMAL);
+        goal.setPadding(0, dp(14), 0, dp(12));
+        goal.setLineSpacing(dp(2), 1f);
+        page.addView(goal);
 
         LinearLayout metrics = new LinearLayout(this);
         metrics.setOrientation(LinearLayout.VERTICAL);
-        card.addView(metrics);
-        for (String metric : module.metrics) {
-            TextView metricView = text("• " + metric, 14, COLOR_PRIMARY, Typeface.BOLD);
-            metricView.setPadding(0, dp(2), 0, dp(2));
-            metrics.addView(metricView);
+        metrics.addView(metricRow(module.metricA, TEAL));
+        metrics.addView(metricRow(module.metricB, AMBER));
+        metrics.addView(metricRow(module.metricC, BLUE));
+        page.addView(metrics);
+
+        if ("S3".equals(module.step) || "S5".equals(module.step)) {
+            page.addView(chartPanel("S3".equals(module.step) ? "10 年渗漏演化趋势" : "优化适应度收敛曲线", ChartView.TYPE_LINE));
         }
 
-        for (Feature feature : module.features) {
-            card.addView(createFeature(feature));
+        page.addView(sectionTitle("核心子功能"));
+        for (int i = 0; i < module.features.length; i++) {
+            page.addView(featureRow(i + 1, module.features[i], module.acceptance[i], stepColor(module.step)));
         }
 
-        Button button = new Button(this);
-        button.setText(module.step + " 查看静态演示数据");
-        button.setAllCaps(false);
-        button.setTextColor(Color.WHITE);
-        button.setBackgroundColor(COLOR_ACCENT);
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        buttonParams.setMargins(0, dp(12), 0, 0);
-        button.setLayoutParams(buttonParams);
-        button.setOnClickListener(view -> Toast.makeText(this, module.title + "：当前为静态展示数据", Toast.LENGTH_SHORT).show());
-        card.addView(button);
-
-        return card;
+        Button action = new Button(this);
+        action.setText(module.step + " 生成静态演示报告");
+        action.setAllCaps(false);
+        action.setTextColor(Color.WHITE);
+        action.setBackground(rounded(stepColor(module.step), 14));
+        action.setOnClickListener(v -> Toast.makeText(this, module.fullName + "：报告已生成（静态演示）", Toast.LENGTH_SHORT).show());
+        page.addView(action, marginParams(0, 14, 0, 0));
+        contentRoot.addView(page, marginParams(0, 0, 0, 22));
     }
 
-    private View createFeature(Feature feature) {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(0, dp(12), 0, 0);
+    private View chartPanel(String title, int type) {
+        LinearLayout panel = vertical(14, CARD);
+        panel.setBackground(rounded(Color.rgb(247, 250, 252), 16));
+        panel.addView(label(title, 15, INK, Typeface.BOLD));
+        panel.addView(new ChartView(this, type), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(160)));
+        return panel;
+    }
 
-        TextView name = text(feature.name, 16, COLOR_TEXT, Typeface.BOLD);
-        box.addView(name);
-
-        TextView details = text("功能详情：" + feature.details, 14, COLOR_MUTED, Typeface.NORMAL);
-        details.setPadding(0, dp(5), 0, 0);
-        details.setLineSpacing(dp(2), 1.0f);
-        box.addView(details);
-
-        TextView acceptance = text("验收标准：" + feature.acceptance, 14, COLOR_WARNING, Typeface.BOLD);
-        acceptance.setPadding(0, dp(5), 0, 0);
-        acceptance.setLineSpacing(dp(2), 1.0f);
-        box.addView(acceptance);
-
+    private View statCard(String title, String value, int color) {
+        LinearLayout box = vertical(14, CARD);
+        box.setBackground(rounded(CARD, 18, Color.rgb(221, 228, 236)));
+        box.addView(label(title, 13, MUTED, Typeface.BOLD));
+        TextView val = label(value, 28, color, Typeface.BOLD);
+        val.setPadding(0, dp(4), 0, 0);
+        box.addView(val);
+        LinearLayout.LayoutParams params = marginParams(0, 0, 6, 0);
+        box.setLayoutParams(params);
         return box;
     }
 
-    private TextView text(String value, int sp, int color, int style) {
+    private View metricRow(String text, int color) {
+        TextView view = label(text, 14, color, Typeface.BOLD);
+        view.setPadding(dp(12), dp(8), dp(12), dp(8));
+        view.setBackground(rounded(light(color), 12));
+        return withMargin(view, 0, 0, 0, 8);
+    }
+
+    private View featureRow(int index, String title, String acceptance, int color) {
+        LinearLayout row = vertical(12, CARD);
+        row.setBackground(rounded(Color.rgb(250, 252, 254), 14, Color.rgb(225, 231, 238)));
+        row.addView(label(String.format("%02d  %s", index, title), 15, INK, Typeface.BOLD));
+        TextView standard = label("验收：" + acceptance, 13, MUTED, Typeface.NORMAL);
+        standard.setPadding(0, dp(6), 0, 0);
+        row.addView(standard);
+        TextView status = label("静态数据已配置", 12, color, Typeface.BOLD);
+        status.setPadding(0, dp(8), 0, 0);
+        row.addView(status);
+        return withMargin(row, 0, 0, 0, 10);
+    }
+
+    private void buildBottomNav() {
+        bottomNav.removeAllViews();
+        for (int i = 0; i < MODULES.length; i++) {
+            final int index = i;
+            TextView tab = label(MODULES[i].step + "\n" + MODULES[i].shortName, 12, MUTED, Typeface.BOLD);
+            tab.setGravity(Gravity.CENTER);
+            tab.setOnClickListener(v -> renderPage(index));
+            bottomNav.addView(tab, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+        }
+    }
+
+    private void refreshTabs() {
+        for (int i = 0; i < bottomNav.getChildCount(); i++) {
+            TextView tab = (TextView) bottomNav.getChildAt(i);
+            boolean selected = i == selectedIndex;
+            tab.setTextColor(selected ? Color.WHITE : MUTED);
+            tab.setBackground(rounded(selected ? stepColor(MODULES[i].step) : Color.TRANSPARENT, 16));
+        }
+    }
+
+    private LinearLayout card(int padding) {
+        LinearLayout layout = vertical(padding, CARD);
+        layout.setBackground(rounded(CARD, 22, Color.rgb(220, 228, 236)));
+        return layout;
+    }
+
+    private LinearLayout vertical(int padding, int color) {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dp(padding), dp(padding), dp(padding), dp(padding));
+        layout.setBackgroundColor(color);
+        return layout;
+    }
+
+    private TextView sectionTitle(String title) {
+        TextView view = label(title, 17, INK, Typeface.BOLD);
+        view.setPadding(0, dp(12), 0, dp(8));
+        return view;
+    }
+
+    private TextView label(String value, int sp, int color, int style) {
         TextView textView = new TextView(this);
         textView.setText(value);
         textView.setTextSize(sp);
@@ -278,20 +250,54 @@ public class MainActivity extends Activity {
         return textView;
     }
 
+    private TextView chip(String value, int bg, int fg) {
+        TextView chip = label(value, 12, fg, Typeface.BOLD);
+        chip.setGravity(Gravity.CENTER);
+        chip.setPadding(dp(10), dp(6), dp(10), dp(6));
+        chip.setBackground(rounded(bg, 20));
+        chip.setLayoutParams(marginParams(0, 0, 8, 0));
+        return chip;
+    }
+
+    private View withMargin(View view, int l, int t, int r, int b) {
+        view.setLayoutParams(marginParams(l, t, r, b));
+        return view;
+    }
+
+    private LinearLayout.LayoutParams marginParams(int l, int t, int r, int b) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(dp(l), dp(t), dp(r), dp(b));
+        return params;
+    }
+
+    private GradientDrawable rounded(int color, int radius) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(dp(radius));
+        return drawable;
+    }
+
+    private GradientDrawable rounded(int color, int radius, int stroke) {
+        GradientDrawable drawable = rounded(color, radius);
+        drawable.setStroke(dp(1), stroke);
+        return drawable;
+    }
+
     private int stepColor(String step) {
-        if ("S1".equals(step)) {
-            return COLOR_PRIMARY;
-        }
-        if ("S2".equals(step)) {
-            return COLOR_WARNING;
-        }
-        if ("S3".equals(step)) {
-            return COLOR_DANGER;
-        }
-        if ("S4".equals(step)) {
-            return COLOR_ACCENT;
-        }
-        return Color.rgb(95, 73, 156);
+        if ("S1".equals(step)) return BLUE;
+        if ("S2".equals(step)) return AMBER;
+        if ("S3".equals(step)) return RED;
+        if ("S4".equals(step)) return TEAL;
+        return PURPLE;
+    }
+
+    private int light(int color) {
+        int r = Math.min(255, Color.red(color) + 205);
+        int g = Math.min(255, Color.green(color) + 190);
+        int b = Math.min(255, Color.blue(color) + 175);
+        return Color.rgb(r, g, b);
     }
 
     private int dp(int value) {
@@ -300,29 +306,118 @@ public class MainActivity extends Activity {
 
     private static class Module {
         final String step;
-        final String title;
+        final String shortName;
+        final String fullName;
         final String goal;
-        final String[] metrics;
-        final Feature[] features;
+        final String metricA;
+        final String metricB;
+        final String metricC;
+        final String[] features;
+        final String[] acceptance;
 
-        Module(String step, String title, String goal, String[] metrics, Feature[] features) {
+        Module(String step, String shortName, String fullName, String goal, String metricA, String metricB,
+               String metricC, String[] features, String[] acceptance) {
             this.step = step;
-            this.title = title;
+            this.shortName = shortName;
+            this.fullName = fullName;
             this.goal = goal;
-            this.metrics = metrics;
+            this.metricA = metricA;
+            this.metricB = metricB;
+            this.metricC = metricC;
             this.features = features;
+            this.acceptance = acceptance;
         }
     }
 
-    private static class Feature {
-        final String name;
-        final String details;
-        final String acceptance;
+    public static class ChartView extends View {
+        static final int TYPE_BARS = 1;
+        static final int TYPE_LINE = 2;
+        private final int type;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        Feature(String name, String details, String acceptance) {
-            this.name = name;
-            this.details = details;
-            this.acceptance = acceptance;
+        public ChartView(android.content.Context context, int type) {
+            super(context);
+            this.type = type;
+            setPadding(0, 8, 0, 8);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            if (type == TYPE_BARS) {
+                drawBars(canvas);
+            } else {
+                drawLine(canvas);
+            }
+        }
+
+        private void drawBars(Canvas canvas) {
+            int[] values = {62, 34, 20, 12};
+            int[] colors = {Color.rgb(46, 160, 94), Color.rgb(229, 181, 60), Color.rgb(230, 126, 34), Color.rgb(204, 55, 66)};
+            String[] labels = {"低", "中", "较高", "高"};
+            float w = getWidth();
+            float h = getHeight();
+            float base = h - 34;
+            float barW = w / 8f;
+            paint.setTextSize(28);
+            paint.setColor(Color.rgb(150, 161, 176));
+            canvas.drawLine(8, base, w - 8, base, paint);
+            for (int i = 0; i < values.length; i++) {
+                float left = w * (0.12f + i * 0.22f);
+                float top = base - values[i] * (h - 60) / 70f;
+                paint.setColor(colors[i]);
+                canvas.drawRoundRect(new RectF(left, top, left + barW, base), 14, 14, paint);
+                paint.setColor(Color.rgb(32, 42, 58));
+                paint.setTextSize(26);
+                canvas.drawText(String.valueOf(values[i]), left + 4, top - 8, paint);
+                paint.setColor(Color.rgb(91, 104, 126));
+                paint.setTextSize(24);
+                canvas.drawText(labels[i], left + 8, h - 6, paint);
+            }
+        }
+
+        private void drawLine(Canvas canvas) {
+            int[] values = {18, 27, 43, 58, 66, 72, 79};
+            float w = getWidth();
+            float h = getHeight();
+            float left = 16;
+            float right = w - 16;
+            float top = 24;
+            float bottom = h - 30;
+            paint.setStrokeWidth(2);
+            paint.setColor(Color.rgb(226, 232, 240));
+            for (int i = 0; i < 4; i++) {
+                float y = top + i * (bottom - top) / 3f;
+                canvas.drawLine(left, y, right, y, paint);
+            }
+            paint.setColor(Color.rgb(204, 55, 66));
+            paint.setStrokeWidth(3);
+            float threshold = bottom - 50 * (bottom - top) / 90f;
+            canvas.drawLine(left, threshold, right, threshold, paint);
+
+            Path path = new Path();
+            for (int i = 0; i < values.length; i++) {
+                float x = left + i * (right - left) / (values.length - 1);
+                float y = bottom - values[i] * (bottom - top) / 90f;
+                if (i == 0) {
+                    path.moveTo(x, y);
+                } else {
+                    path.lineTo(x, y);
+                }
+            }
+            paint.setColor(Color.rgb(30, 95, 168));
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(5);
+            canvas.drawPath(path, paint);
+            paint.setStyle(Paint.Style.FILL);
+            for (int i = 0; i < values.length; i++) {
+                float x = left + i * (right - left) / (values.length - 1);
+                float y = bottom - values[i] * (bottom - top) / 90f;
+                canvas.drawCircle(x, y, 7, paint);
+            }
+            paint.setColor(Color.rgb(91, 104, 126));
+            paint.setTextSize(24);
+            canvas.drawText("阈值 50", left, threshold - 8, paint);
         }
     }
 }
