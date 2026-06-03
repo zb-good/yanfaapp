@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">简单安卓 App</string>
+    <string name="title">你好，Android</string>
+    <string name="subtitle">这是一个简单的安卓应用示例。</string>
+    <string name="counter_value_initial">你还没有点击按钮</string>
+    <string name="counter_value">你点击了 %1$d 次</string>
+    <string name="tap_button">点我一下</string>
+</resources>
